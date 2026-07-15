@@ -24,3 +24,14 @@ The CLI only reads local fixture files and writes to stdout unless `--output` is
 ## Limitations
 
 V1 uses deterministic keyword classification. Treat unknown categories as review prompts, not authoritative security findings.
+
+## Verification
+
+Run the local gates before opening a pull request:
+
+```sh
+npm test
+npm run check
+npm run smoke
+```
+
