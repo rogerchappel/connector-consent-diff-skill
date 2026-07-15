@@ -1,0 +1,1 @@
+{"capabilities":[{"id":"github-read","category":"network","action":"read","target":"github issues","approval":"always ask"},{"id":"slack-send","category":"messaging","action":"send","target":"direct messages","approval":"important actions"},{"id":"shell-run","category":"shell","action":"execute","target":"local commands","approval":"never ask"}]}

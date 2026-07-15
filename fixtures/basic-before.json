@@ -1,0 +1,1 @@
+{"capabilities":[{"id":"github-read","category":"network","action":"read","target":"github issues","approval":"always ask"},{"id":"slack-read","category":"messaging","action":"read","target":"channel history","approval":"always ask"}]}
