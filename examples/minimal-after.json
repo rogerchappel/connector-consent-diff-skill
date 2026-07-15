@@ -1,0 +1,18 @@
+{
+  "capabilities": [
+    {
+      "id": "mail-read",
+      "category": "messaging",
+      "action": "read",
+      "target": "inbox metadata",
+      "approval": "always ask"
+    },
+    {
+      "id": "mail-send",
+      "category": "messaging",
+      "action": "send",
+      "target": "outbound email",
+      "approval": "important actions"
+    }
+  ]
+}
