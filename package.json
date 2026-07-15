@@ -1,0 +1,33 @@
+{
+  "name": "connector-consent-diff-skill",
+  "version": "0.1.0",
+  "description": "Review connector permission changes before approval.",
+  "type": "module",
+  "bin": {
+    "connector-consent-diff": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "SKILL.md",
+    "README.md",
+    "docs",
+    "fixtures"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "smoke": "npm run build && node dist/cli.js --help"
+  },
+  "keywords": [
+    "agent-skill",
+    "cli",
+    "dry-run",
+    "local-first"
+  ],
+  "author": "Roger Chappel",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
