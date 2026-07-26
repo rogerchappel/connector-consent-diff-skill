@@ -10,12 +10,21 @@ npm run build
 npx connector-consent-diff fixtures/basic-before.json fixtures/risky-after.json --format markdown
 ```
 
+`--format` accepts `markdown` (the default) or `json`. Use `--output <file>` to
+write the report instead of printing it:
+
+```bash
+npx connector-consent-diff fixtures/basic-before.json fixtures/safe-after.json \
+  --format json --output consent-diff.json
+```
+
 ## What it does
 
 - Parses JSON connector manifests and OpenClaw-style tool summaries.
 - Finds added, removed, and changed read/write/action capabilities.
 - Classifies risk across filesystem, network, messaging, browser, shell, database, secrets, and unknown categories.
 - Emits Markdown or JSON evidence with approval wording and reviewer questions.
+- Preserves repeated capability IDs and compares repeated entries in manifest order.
 
 ## Safety
 
@@ -34,4 +43,3 @@ npm test
 npm run check
 npm run smoke
 ```
-

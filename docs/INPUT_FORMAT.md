@@ -15,3 +15,7 @@ Each item can include:
 - `approval` or `approvalRequirement`
 
 Unknown fields are retained in the raw parsed capability for downstream review.
+
+When `id` and `name` are absent, the parser derives an ID from the category,
+action, and target. IDs do not have to be unique: repeated entries with the same
+explicit or derived ID are preserved and compared in their manifest order.
