@@ -64,6 +64,33 @@ test("reports validation errors for invalid collection and item shapes", () => {
   }
 });
 
+test("treats reordered duplicate IDs as unchanged while retaining real changes", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
+  const reorderedBefore = path.join(directory, "before.json");
+  const reorderedAfter = path.join(directory, "after.json");
+  try {
+    fs.writeFileSync(reorderedBefore, JSON.stringify({ capabilities: [
+      { id: "shared", action: "read", target: "alpha" },
+      { id: "shared", action: "read", target: "beta" },
+      { id: "shared", action: "read", target: "gamma" }
+    ] }));
+    fs.writeFileSync(reorderedAfter, JSON.stringify({ capabilities: [
+      { id: "shared", action: "read", target: "gamma" },
+      { id: "shared", action: "write", target: "delta" },
+      { id: "shared", action: "read", target: "alpha" }
+    ] }));
+
+    const result = run([reorderedBefore, reorderedAfter, "--format", "json"]);
+    assert.equal(result.status, 0);
+    const report = JSON.parse(result.stdout);
+    assert.deepEqual(report.summary, { added: 0, removed: 0, changed: 1, highRisk: 0 });
+    assert.equal(report.entries[0].before.evidencePath, "capabilities[1]");
+    assert.equal(report.entries[0].after.evidencePath, "capabilities[1]");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 for (const [name, args, message] of [
   ["unsupported format", [before, after, "--format", "yaml"], /--format must be markdown or json/],
   ["missing format", [before, after, "--format"], /--format requires a value/],
