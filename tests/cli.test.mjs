@@ -76,7 +76,7 @@ test("treats reordered duplicate IDs as unchanged while retaining real changes",
     ] }));
     fs.writeFileSync(reorderedAfter, JSON.stringify({ capabilities: [
       { id: "shared", action: "read", target: "gamma" },
-      { id: "shared", action: "write", target: "delta" },
+      { id: "shared", action: "read", target: "delta" },
       { id: "shared", action: "read", target: "alpha" }
     ] }));
 
