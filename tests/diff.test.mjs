@@ -48,6 +48,54 @@ test("reports extra duplicate capabilities as additions and removals", () => {
   assert.equal(diffCapabilities(two, one).summary.removed, 1);
 });
 
+test("ignores a pure reorder within a duplicate-ID group", () => {
+  const before = parseManifest({
+    capabilities: [
+      { id: "shared", action: "read", target: "alpha" },
+      { id: "shared", action: "read", target: "beta" }
+    ]
+  });
+  const after = parseManifest({
+    capabilities: [
+      { id: "shared", action: "read", target: "beta" },
+      { id: "shared", action: "read", target: "alpha" }
+    ]
+  });
+
+  assert.deepEqual(diffCapabilities(before, after).summary, {
+    added: 0,
+    removed: 0,
+    changed: 0,
+    highRisk: 0
+  });
+});
+
+test("pairs the unmatched members of reordered duplicate-ID groups", () => {
+  const before = parseManifest({
+    permissions: [
+      { id: "shared", action: "read", target: "alpha" },
+      { id: "shared", action: "read", target: "beta" },
+      { id: "shared", action: "read", target: "gamma" }
+    ]
+  });
+  const after = parseManifest({
+    tools: [
+      { id: "shared", action: "read", target: "gamma" },
+      { id: "shared", action: "write", target: "delta" },
+      { id: "shared", action: "read", target: "alpha" }
+    ]
+  });
+
+  const report = diffCapabilities(before, after);
+
+  assert.equal(report.summary.changed, 1);
+  assert.equal(report.entries.length, 1);
+  assert.equal(report.entries[0].before?.target, "beta");
+  assert.equal(report.entries[0].before?.evidencePath, "permissions[1]");
+  assert.equal(report.entries[0].after?.target, "delta");
+  assert.equal(report.entries[0].after?.evidencePath, "tools[1]");
+});
+
 test("requires a supported array collection with object items", () => {
   assert.throws(
     () => parseManifest({ permissionz: [] }),
