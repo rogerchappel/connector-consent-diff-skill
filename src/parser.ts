@@ -8,12 +8,6 @@ function categoryFor(value: string): CapabilityCategory {
   return categories.find((category) => text.includes(category)) ?? "unknown";
 }
 
-function asArray(value: unknown): unknown[] {
-  if (Array.isArray(value)) return value;
-  if (value && typeof value === "object") return Object.values(value as Record<string, unknown>);
-  return [];
-}
-
 function getString(record: Record<string, unknown>, names: string[], fallback = ""): string {
   for (const name of names) {
     const value = record[name];
@@ -24,16 +18,31 @@ function getString(record: Record<string, unknown>, names: string[], fallback = 
 
 export function parseManifestFile(file: string): Capability[] {
   const raw = fs.readFileSync(file, "utf8");
-  const data = JSON.parse(raw) as Record<string, unknown>;
-  return parseManifest(data);
+  const data: unknown = JSON.parse(raw);
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Manifest must be a JSON object");
+  }
+  return parseManifest(data as Record<string, unknown>);
 }
 
 export function parseManifest(data: Record<string, unknown>): Capability[] {
-  const source = data.capabilities ?? data.permissions ?? data.tools ?? [];
-  return asArray(source).map((item, index) => {
-    const record = typeof item === "object" && item ? item as Record<string, unknown> : { value: String(item) };
+  const sourceKey = ["capabilities", "permissions", "tools"].find((key) =>
+    Object.prototype.hasOwnProperty.call(data, key)
+  );
+  if (!sourceKey) {
+    throw new Error("Manifest must contain a capabilities, permissions, or tools array");
+  }
+  const source = data[sourceKey];
+  if (!Array.isArray(source)) {
+    throw new Error(`Manifest field "${sourceKey}" must be an array`);
+  }
+  return source.map((item, index) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(`Manifest field "${sourceKey}[${index}]" must be an object`);
+    }
+    const record = item as Record<string, unknown>;
     const action = getString(record, ["action", "verb", "operation", "name"], "use");
-    const target = getString(record, ["target", "resource", "scope", "description"], getString(record, ["value"], "unspecified"));
+    const target = getString(record, ["target", "resource", "scope", "description"], "unspecified");
     const category = getString(record, ["category", "type"], "");
     const id = getString(record, ["id", "name"], `${category || categoryFor(action + " " + target)}:${action}:${target}`);
     return {
@@ -42,7 +51,7 @@ export function parseManifest(data: Record<string, unknown>): Capability[] {
       action,
       target,
       approval: getString(record, ["approval", "approvalRequirement", "requiresApproval"], "unspecified"),
-      evidencePath: `capabilities[${index}]`,
+      evidencePath: `${sourceKey}[${index}]`,
       raw: record
     };
   });

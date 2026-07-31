@@ -36,6 +36,34 @@ test("writes output to the requested file", () => {
   }
 });
 
+test("rejects typoed collection keys instead of reporting no changes", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
+  const typoed = path.join(directory, "typoed.json");
+  try {
+    fs.writeFileSync(typoed, JSON.stringify({ permissionz: [{ id: "send" }] }));
+    const result = run([typoed, typoed]);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /must contain a capabilities, permissions, or tools array/);
+    assert.doesNotMatch(result.stdout, /No permission changes detected/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("reports validation errors for invalid collection and item shapes", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
+  const invalidCollection = path.join(directory, "collection.json");
+  const invalidItem = path.join(directory, "item.json");
+  try {
+    fs.writeFileSync(invalidCollection, JSON.stringify({ permissions: {} }));
+    fs.writeFileSync(invalidItem, JSON.stringify({ tools: [null] }));
+    assert.match(run([invalidCollection, after]).stderr, /"permissions" must be an array/);
+    assert.match(run([invalidItem, after]).stderr, /"tools\[0\]" must be an object/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 for (const [name, args, message] of [
   ["unsupported format", [before, after, "--format", "yaml"], /--format must be markdown or json/],
   ["missing format", [before, after, "--format"], /--format requires a value/],
