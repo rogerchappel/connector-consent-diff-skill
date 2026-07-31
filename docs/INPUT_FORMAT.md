@@ -25,4 +25,8 @@ and evidence paths.
 
 When `id` and `name` are absent, the parser derives an ID from the category,
 action, and target. IDs do not have to be unique: repeated entries with the same
-explicit or derived ID are preserved and compared in their manifest order.
+explicit or derived ID are preserved. Within each repeated-ID group, identical
+capabilities are matched by category, action, target, and approval regardless of
+manifest order. Any remaining unmatched entries are paired in manifest order so
+real changes retain their before and after evidence paths; surplus entries are
+reported as additions or removals.
