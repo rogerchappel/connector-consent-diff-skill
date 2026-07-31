@@ -15,14 +15,24 @@ function changed(a: Capability, b: Capability): boolean {
   return a.category !== b.category || a.action !== b.action || a.target !== b.target || a.approval !== b.approval;
 }
 
+function removeExactMatches(before: Capability[], after: Capability[]): [Capability[], Capability[]] {
+  const unmatchedAfter = [...after];
+  const unmatchedBefore = before.filter((beforeCap) => {
+    const matchIndex = unmatchedAfter.findIndex((afterCap) => !changed(beforeCap, afterCap));
+    if (matchIndex === -1) return true;
+    unmatchedAfter.splice(matchIndex, 1);
+    return false;
+  });
+  return [unmatchedBefore, unmatchedAfter];
+}
+
 export function diffCapabilities(before: Capability[], after: Capability[]): DiffReport {
   const b = groupById(before);
   const a = groupById(after);
   const entries: DiffEntry[] = [];
   const ids = new Set([...b.keys(), ...a.keys()]);
   for (const id of ids) {
-    const beforeGroup = b.get(id) ?? [];
-    const afterGroup = a.get(id) ?? [];
+    const [beforeGroup, afterGroup] = removeExactMatches(b.get(id) ?? [], a.get(id) ?? []);
     const sharedLength = Math.min(beforeGroup.length, afterGroup.length);
     for (let index = 0; index < sharedLength; index += 1) {
       const beforeCap = beforeGroup[index];
