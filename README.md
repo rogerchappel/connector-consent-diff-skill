@@ -30,6 +30,10 @@ npx connector-consent-diff fixtures/basic-before.json fixtures/safe-after.json \
 
 The CLI only reads local fixture files and writes to stdout unless `--output` is supplied. It never calls connector APIs, reads credential values, changes permissions, or approves external actions.
 
+Input must contain a `capabilities`, `permissions`, or `tools` array of objects.
+Invalid collection keys and shapes are reported as validation errors with exit
+status 1; see [the input format guide](docs/INPUT_FORMAT.md).
+
 ## Limitations
 
 V1 uses deterministic keyword classification. Treat unknown categories as review prompts, not authoritative security findings.
