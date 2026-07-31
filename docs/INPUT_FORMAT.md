@@ -1,6 +1,6 @@
 # Input Format
 
-The CLI accepts JSON files with one of these top-level arrays:
+The CLI accepts a JSON object with one of these top-level arrays:
 
 - `capabilities`
 - `permissions`
@@ -15,6 +15,13 @@ Each item can include:
 - `approval` or `approvalRequirement`
 
 Unknown fields are retained in the raw parsed capability for downstream review.
+Each array item must be a JSON object. A missing supported key, a non-array
+collection, or a non-object item is a validation error; the CLI prints the
+invalid key or indexed path and exits with status 1.
+
+Evidence paths retain the source collection name, such as `permissions[0]` or
+`tools[2]`. Changed entries in Markdown show both the before and after values
+and evidence paths.
 
 When `id` and `name` are absent, the parser derives an ID from the category,
 action, and target. IDs do not have to be unique: repeated entries with the same
