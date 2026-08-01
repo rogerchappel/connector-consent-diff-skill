@@ -110,6 +110,50 @@ test("preserves permissions and tools evidence paths", () => {
   assert.equal(parseManifest({ tools: [{ id: "send" }] })[0].evidencePath, "tools[0]");
 });
 
+test("normalizes boolean requiresApproval across supported collections", () => {
+  for (const collection of ["capabilities", "permissions", "tools"]) {
+    const required = parseManifest({ [collection]: [{ requiresApproval: true }] })[0];
+    const notRequired = parseManifest({ [collection]: [{ requiresApproval: false }] })[0];
+
+    assert.equal(required.approval, "required");
+    assert.equal(notRequired.approval, "not required");
+    assert.equal(required.evidencePath, `${collection}[0]`);
+    assert.equal(notRequired.evidencePath, `${collection}[0]`);
+  }
+});
+
+test("retains string approval fields and requiresApproval strings", () => {
+  assert.equal(parseManifest({ capabilities: [{ approval: "manual" }] })[0].approval, "manual");
+  assert.equal(parseManifest({ permissions: [{ approvalRequirement: "admin" }] })[0].approval, "admin");
+  assert.equal(parseManifest({ tools: [{ requiresApproval: "per use" }] })[0].approval, "per use");
+});
+
+test("treats boolean approval changes as explicit and diffable", () => {
+  const base = { id: "read", category: "filesystem", action: "read", target: "config" };
+  const before = parseManifest({ permissions: [{ ...base, requiresApproval: false }] });
+  const after = parseManifest({ tools: [{ ...base, requiresApproval: true }] });
+  const report = diffCapabilities(before, after);
+
+  assert.equal(report.summary.changed, 1);
+  assert.equal(report.entries[0].risk, "low");
+  assert.doesNotMatch(report.entries[0].reason, /ambiguous/i);
+  assert.equal(report.entries[0].before?.approval, "not required");
+  assert.equal(report.entries[0].after?.approval, "required");
+});
+
+test("renders normalized boolean approval requirements", () => {
+  const after = parseManifest({
+    capabilities: [
+      { id: "required", category: "filesystem", action: "read", target: "a", requiresApproval: true },
+      { id: "unapproved", category: "filesystem", action: "read", target: "b", requiresApproval: false }
+    ]
+  });
+
+  const markdown = renderMarkdown(diffCapabilities([], after));
+  assert.match(markdown, /Approval: required/);
+  assert.match(markdown, /Approval: not required/);
+});
+
 test("renders both sides and their evidence for changed entries", () => {
   const before = parseManifest({
     permissions: [{ id: "send", category: "messaging", action: "send", target: "draft", approval: "required" }]

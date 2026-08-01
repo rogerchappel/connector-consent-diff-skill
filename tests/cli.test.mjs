@@ -91,6 +91,30 @@ test("treats reordered duplicate IDs as unchanged while retaining real changes",
   }
 });
 
+test("reports true and false requiresApproval values through the CLI", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
+  const booleanBefore = path.join(directory, "before.json");
+  const booleanAfter = path.join(directory, "after.json");
+  try {
+    fs.writeFileSync(booleanBefore, JSON.stringify({ tools: [
+      { id: "read", category: "filesystem", action: "read", target: "config", requiresApproval: false }
+    ] }));
+    fs.writeFileSync(booleanAfter, JSON.stringify({ permissions: [
+      { id: "read", category: "filesystem", action: "read", target: "config", requiresApproval: true }
+    ] }));
+
+    const result = run([booleanBefore, booleanAfter, "--format", "json"]);
+    assert.equal(result.status, 0);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.summary.changed, 1);
+    assert.equal(report.entries[0].before.approval, "not required");
+    assert.equal(report.entries[0].after.approval, "required");
+    assert.equal(report.entries[0].risk, "low");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 for (const [name, args, message] of [
   ["unsupported format", [before, after, "--format", "yaml"], /--format must be markdown or json/],
   ["missing format", [before, after, "--format"], /--format requires a value/],
