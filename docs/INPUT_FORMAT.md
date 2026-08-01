@@ -12,7 +12,12 @@ Each item can include:
 - `category` or `type`
 - `action`, `verb`, or `operation`
 - `target`, `resource`, `scope`, or `description`
-- `approval` or `approvalRequirement`
+- `approval`, `approvalRequirement`, or `requiresApproval`
+
+Approval fields accept non-empty strings. The `requiresApproval` alias also
+accepts a boolean: `true` is normalized to `approval: "required"`, while
+`false` is normalized to `approval: "not required"`. This preserves an explicit
+no-approval requirement instead of treating it as missing or ambiguous.
 
 Unknown fields are retained in the raw parsed capability for downstream review.
 Each array item must be a JSON object. A missing supported key, a non-array
