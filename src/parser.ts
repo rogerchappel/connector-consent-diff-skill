@@ -16,6 +16,17 @@ function getString(record: Record<string, unknown>, names: string[], fallback = 
   return fallback;
 }
 
+function getApproval(record: Record<string, unknown>): string {
+  const approval = getString(record, ["approval", "approvalRequirement", "requiresApproval"]);
+  if (approval) return approval;
+
+  const requiresApproval = record.requiresApproval;
+  if (typeof requiresApproval === "boolean") {
+    return requiresApproval ? "required" : "not required";
+  }
+  return "unspecified";
+}
+
 export function parseManifestFile(file: string): Capability[] {
   const raw = fs.readFileSync(file, "utf8");
   const data: unknown = JSON.parse(raw);
@@ -50,7 +61,7 @@ export function parseManifest(data: Record<string, unknown>): Capability[] {
       category: (category ? categoryFor(category) : categoryFor(action + " " + target)),
       action,
       target,
-      approval: getString(record, ["approval", "approvalRequirement", "requiresApproval"], "unspecified"),
+      approval: getApproval(record),
       evidencePath: `${sourceKey}[${index}]`,
       raw: record
     };
