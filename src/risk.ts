@@ -2,6 +2,15 @@ import type { Capability, DiffEntry } from "./types.js";
 
 const highCategories = new Set(["shell", "secrets", "database"]);
 const writeWords = /write|send|delete|update|create|publish|execute|run|install|uninstall/i;
+const approvalRequired = new Set(["required", "true", "yes", "always"]);
+const approvalNotRequired = new Set(["not required", "false", "no", "never", "none"]);
+
+function approvalState(value: string): "required" | "not required" | "unknown" {
+  const normalized = value.trim().toLowerCase();
+  if (approvalRequired.has(normalized)) return "required";
+  if (approvalNotRequired.has(normalized)) return "not required";
+  return "unknown";
+}
 
 export function classify(kind: DiffEntry["kind"], before: Capability | undefined, after: Capability | undefined): Pick<DiffEntry, "risk" | "reason" | "reviewerQuestion"> {
   const capability = after ?? before;
@@ -10,6 +19,13 @@ export function classify(kind: DiffEntry["kind"], before: Capability | undefined
   }
   if (kind === "removed") {
     return { risk: "low", reason: "Capability was removed.", reviewerQuestion: "Does removing this scope break any expected workflow?" };
+  }
+  if (kind === "changed" && before && after && approvalState(before.approval) === "required" && approvalState(after.approval) === "not required") {
+    return {
+      risk: "high",
+      reason: "The capability no longer requires explicit approval.",
+      reviewerQuestion: "Why can this capability proceed without the previous approval gate?"
+    };
   }
   if (highCategories.has(capability.category) || writeWords.test(`${capability.action} ${capability.target}`)) {
     return {
