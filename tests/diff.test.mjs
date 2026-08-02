@@ -141,6 +141,43 @@ test("treats boolean approval changes as explicit and diffable", () => {
   assert.equal(report.entries[0].after?.approval, "required");
 });
 
+test("flags approval-gate relaxation while keeping gate tightening low risk", () => {
+  const base = { id: "read", category: "filesystem", action: "read", target: "config" };
+  const relaxed = diffCapabilities(
+    parseManifest({ tools: [{ ...base, requiresApproval: true }] }),
+    parseManifest({ tools: [{ ...base, requiresApproval: false }] })
+  );
+  const tightened = diffCapabilities(
+    parseManifest({ tools: [{ ...base, requiresApproval: false }] }),
+    parseManifest({ tools: [{ ...base, requiresApproval: true }] })
+  );
+
+  assert.equal(relaxed.entries[0].risk, "high");
+  assert.match(relaxed.entries[0].reason, /no longer requires explicit approval/i);
+  assert.match(relaxed.entries[0].reviewerQuestion, /without the previous approval gate/i);
+  assert.equal(relaxed.summary.highRisk, 1);
+  assert.equal(tightened.entries[0].risk, "low");
+  assert.equal(tightened.summary.highRisk, 0);
+});
+
+test("recognizes documented string aliases when approval gates change", () => {
+  const base = { id: "read", category: "filesystem", action: "read", target: "config" };
+  for (const required of ["required", "true", "yes", "always"]) {
+    for (const notRequired of ["not required", "false", "no", "never", "none"]) {
+      const relaxed = diffCapabilities(
+        parseManifest({ tools: [{ ...base, requiresApproval: required }] }),
+        parseManifest({ tools: [{ ...base, requiresApproval: notRequired }] })
+      );
+      const tightened = diffCapabilities(
+        parseManifest({ tools: [{ ...base, requiresApproval: notRequired }] }),
+        parseManifest({ tools: [{ ...base, requiresApproval: required }] })
+      );
+      assert.equal(relaxed.entries[0].risk, "high", `${required} -> ${notRequired}`);
+      assert.equal(tightened.entries[0].risk, "low", `${notRequired} -> ${required}`);
+    }
+  }
+});
+
 test("renders normalized boolean approval requirements", () => {
   const after = parseManifest({
     capabilities: [
