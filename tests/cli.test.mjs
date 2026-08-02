@@ -115,6 +115,29 @@ test("reports true and false requiresApproval values through the CLI", () => {
   }
 });
 
+test("returns high-risk status when an approval gate is relaxed", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
+  const approvalBefore = path.join(directory, "before.json");
+  const approvalAfter = path.join(directory, "after.json");
+  try {
+    fs.writeFileSync(approvalBefore, JSON.stringify({ tools: [
+      { id: "read", category: "filesystem", action: "read", target: "config", requiresApproval: "YES" }
+    ] }));
+    fs.writeFileSync(approvalAfter, JSON.stringify({ tools: [
+      { id: "read", category: "filesystem", action: "read", target: "config", requiresApproval: "no" }
+    ] }));
+
+    const result = run([approvalBefore, approvalAfter, "--format", "json"]);
+    assert.equal(result.status, 2);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.summary.highRisk, 1);
+    assert.equal(report.entries[0].risk, "high");
+    assert.match(report.entries[0].reason, /no longer requires explicit approval/i);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 for (const [name, args, message] of [
   ["unsupported format", [before, after, "--format", "yaml"], /--format must be markdown or json/],
   ["missing format", [before, after, "--format"], /--format requires a value/],
