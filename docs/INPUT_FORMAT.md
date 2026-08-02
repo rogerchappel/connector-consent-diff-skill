@@ -19,6 +19,13 @@ accepts a boolean: `true` is normalized to `approval: "required"`, while
 `false` is normalized to `approval: "not required"`. This preserves an explicit
 no-approval requirement instead of treating it as missing or ambiguous.
 
+For directional risk classification, the case-insensitive strings `required`,
+`true`, `yes`, and `always` are treated as requiring approval. The strings
+`not required`, `false`, `no`, `never`, and `none` are treated as not requiring
+approval. Changing from the first group to the second is high risk; changing in
+the opposite direction remains low risk. Other non-empty strings are preserved
+for display but are not interpreted directionally.
+
 Unknown fields are retained in the raw parsed capability for downstream review.
 Each array item must be a JSON object. A missing supported key, a non-array
 collection, or a non-object item is a validation error; the CLI prints the
