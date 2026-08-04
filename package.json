@@ -25,7 +25,8 @@
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test tests/*.test.mjs",
-    "smoke": "npm run build && node dist/cli.js --help"
+    "smoke": "npm run build && node dist/cli.js --help",
+    "test:package": "npm run build && node scripts/test-packed-package.mjs"
   },
   "keywords": [
     "agent-skill",
