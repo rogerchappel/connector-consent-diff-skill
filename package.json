@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Review connector permission changes before approval.",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "bin": {
     "connector-consent-diff": "./dist/cli.js"
   },
