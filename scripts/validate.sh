@@ -3,6 +3,7 @@ set -euo pipefail
 npm run check
 npm test
 npm run smoke
+npm run test:package
 node dist/cli.js fixtures/basic-before.json fixtures/risky-after.json --format markdown >/tmp/connector-consent-diff.md || test "$?" -eq 2
 if node dist/cli.js fixtures/basic-before.json fixtures/safe-after.json --format yaml >/dev/null 2>&1; then
   echo "unsupported --format unexpectedly succeeded" >&2
