@@ -18,6 +18,27 @@ npx connector-consent-diff fixtures/basic-before.json fixtures/safe-after.json \
   --format json --output consent-diff.json
 ```
 
+## Programmatic API
+
+The package root provides the supported ESM API, with TypeScript declarations:
+
+```js
+import {
+  diffCapabilities,
+  parseManifest,
+  parseManifestFile,
+  renderJson,
+  renderMarkdown,
+} from "connector-consent-diff-skill";
+
+const before = parseManifestFile("before.json");
+const after = parseManifest({ capabilities: [{ id: "files.read" }] });
+const report = diffCapabilities(before, after);
+
+console.log(renderMarkdown(report));
+console.log(renderJson(report));
+```
+
 ## What it does
 
 - Parses JSON connector manifests and OpenClaw-style tool summaries.
@@ -49,4 +70,5 @@ Run the local gates before opening a pull request:
 npm test
 npm run check
 npm run smoke
+npm run test:package
 ```
