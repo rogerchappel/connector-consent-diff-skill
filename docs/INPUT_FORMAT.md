@@ -35,6 +35,13 @@ Evidence paths retain the source collection name, such as `permissions[0]` or
 `tools[2]`. Changed entries in Markdown show both the before and after values
 and evidence paths.
 
+Markdown reports escape field values before placing them in headings and list
+items. Markdown punctuation is backslash-escaped, and control characters are
+shown with visible escapes such as `\n`, `\r`, `\t`, or `\u0000`. A manifest
+value therefore remains within its labeled report field instead of creating a
+new heading, list item, or summary-like line. JSON reports are unchanged and
+preserve the original parsed strings as JSON data.
+
 When `id` and `name` are absent, the parser derives an ID from the category,
 action, and target. IDs do not have to be unique: repeated entries with the same
 explicit or derived ID are preserved. Within each repeated-ID group, identical
