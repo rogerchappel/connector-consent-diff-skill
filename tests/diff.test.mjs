@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { diffCapabilities, parseManifest, parseManifestFile, renderMarkdown } from "../dist/index.js";
+import { diffCapabilities, parseManifest, parseManifestFile, renderJson, renderMarkdown } from "../dist/index.js";
 
 test("flags high risk added actions", () => {
   const before = parseManifestFile("fixtures/basic-before.json");
@@ -15,6 +15,68 @@ test("renders reviewer questions", () => {
   const after = parseManifestFile("fixtures/safe-after.json");
   const md = renderMarkdown(diffCapabilities(before, after));
   assert.match(md, /Reviewer question/);
+});
+
+test("keeps manifest-controlled Markdown syntax inside its report fields", () => {
+  const after = parseManifest({
+    capabilities: [
+      {
+        id: "normal\n## FORGED SECTION",
+        category: "filesystem",
+        action: "read\r\n- Risk: low",
+        target: "records\nAdded: 999",
+        approval: "manual\t# approved"
+      }
+    ]
+  });
+  const report = diffCapabilities([], after);
+  const markdown = renderMarkdown(report);
+
+  assert.match(markdown, /## ADDED: normal\\n\\#\\# FORGED SECTION/);
+  assert.match(markdown, /Action: read\\r\\n\\- Risk: low/);
+  assert.match(markdown, /Target: records\\nAdded: 999/);
+  assert.match(markdown, /Approval: manual\\t\\# approved/);
+  assert.equal(markdown.match(/^## /gm)?.length, 1);
+  assert.equal(markdown.match(/^- Risk:/gm)?.length, 1);
+  assert.equal(markdown.match(/^Added:/gm)?.length, 1);
+  assert.doesNotMatch(markdown, /\r|\t/);
+
+  const json = renderJson(report);
+  const parsed = JSON.parse(json);
+  assert.equal(parsed.entries[0].id, "normal\n## FORGED SECTION");
+  assert.equal(parsed.entries[0].after.action, "read\r\n- Risk: low");
+  assert.equal(parsed.entries[0].after.target, "records\nAdded: 999");
+  assert.equal(parsed.entries[0].after.approval, "manual\t# approved");
+});
+
+test("retains ordinary Markdown report wording", () => {
+  const report = diffCapabilities(
+    [],
+    parseManifest({
+      tools: [{ id: "read-config", category: "filesystem", action: "read", target: "config", approval: "required" }]
+    })
+  );
+
+  assert.equal(
+    renderMarkdown(report),
+    [
+      "# Connector Consent Diff",
+      "",
+      "Added: 1 | Removed: 0 | Changed: 0 | High risk: 0",
+      "",
+      "## ADDED: read\\-config",
+      "",
+      "- Risk: low",
+      "- Category: filesystem",
+      "- Action: read",
+      "- Target: config",
+      "- Approval: required",
+      "- Evidence: tools\\[0\\]",
+      "- Reason: Read\\-like capability with an explicit category and approval statement\\.",
+      "- Reviewer question: Is this scope limited to the smallest useful resource?",
+      ""
+    ].join("\n")
+  );
 });
 
 test("compares every capability when derived IDs are duplicated", () => {
@@ -202,7 +264,7 @@ test("renders both sides and their evidence for changed entries", () => {
   const markdown = renderMarkdown(diffCapabilities(before, after));
 
   assert.match(markdown, /Before: .*target=draft/);
-  assert.match(markdown, /Before evidence: permissions\[0\]/);
+  assert.match(markdown, /Before evidence: permissions\\\[0\\\]/);
   assert.match(markdown, /After: .*target=customer/);
-  assert.match(markdown, /After evidence: tools\[0\]/);
+  assert.match(markdown, /After evidence: tools\\\[0\\\]/);
 });
