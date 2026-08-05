@@ -1,6 +1,6 @@
 import type { DiffReport } from "./types.js";
 
-const markdownSyntax = new Set(["\\", "`", "*", "_", "{", "}", "[", "]", "<", ">", "(", ")", "#", "+", "-", ".", "!", "|"]);
+const markdownSyntax = new Set(["\\", "`", "*", "_", "{", "}", "[", "]", "<", ">", "(", ")", "#", "+", "-", "!", "|"]);
 
 function escapeMarkdownField(value: string): string {
   let escaped = "";

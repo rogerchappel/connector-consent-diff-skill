@@ -72,7 +72,7 @@ test("retains ordinary Markdown report wording", () => {
       "- Target: config",
       "- Approval: required",
       "- Evidence: tools\\[0\\]",
-      "- Reason: Read\\-like capability with an explicit category and approval statement\\.",
+      "- Reason: Read\\-like capability with an explicit category and approval statement.",
       "- Reviewer question: Is this scope limited to the smallest useful resource?",
       ""
     ].join("\n")
