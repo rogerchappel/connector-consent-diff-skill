@@ -64,6 +64,24 @@ test("reports validation errors for invalid collection and item shapes", () => {
   }
 });
 
+test("rejects invalid field types without emitting a misleading diff", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
+  const invalid = path.join(directory, "invalid.json");
+  try {
+    fs.writeFileSync(invalid, JSON.stringify({ tools: [
+      { id: "valid" },
+      { id: 17, category: [], action: {}, target: false, requiresApproval: 3 }
+    ] }));
+    const result = run([invalid, after]);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Manifest field "tools\[1\]\.id" must be a string/);
+    assert.equal(result.stdout, "");
+    assert.doesNotMatch(result.stdout, /Connector Consent Diff|No permission changes detected/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("treats reordered duplicate IDs as unchanged while retaining real changes", () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
   const reorderedBefore = path.join(directory, "before.json");
