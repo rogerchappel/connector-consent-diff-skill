@@ -2,6 +2,11 @@ import fs from "node:fs";
 import type { Capability, CapabilityCategory } from "./types.js";
 
 const categories: CapabilityCategory[] = ["filesystem", "network", "messaging", "browser", "shell", "database", "secrets"];
+const stringFields = [
+  "id", "name", "category", "type", "action", "verb", "operation",
+  "target", "resource", "scope", "description"
+];
+const approvalFields = ["approval", "approvalRequirement"];
 
 function categoryFor(value: string): CapabilityCategory {
   const text = value.toLowerCase();
@@ -25,6 +30,28 @@ function getApproval(record: Record<string, unknown>): string {
     return requiresApproval ? "required" : "not required";
   }
   return "unspecified";
+}
+
+function validateFields(record: Record<string, unknown>, path: string): void {
+  for (const field of stringFields) {
+    if (Object.prototype.hasOwnProperty.call(record, field) && typeof record[field] !== "string") {
+      throw new Error(`Manifest field "${path}.${field}" must be a string`);
+    }
+  }
+  for (const field of approvalFields) {
+    if (Object.prototype.hasOwnProperty.call(record, field)) {
+      const value = record[field];
+      if (typeof value !== "string" || !value.trim()) {
+        throw new Error(`Manifest field "${path}.${field}" must be a non-empty string`);
+      }
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(record, "requiresApproval")) {
+    const value = record.requiresApproval;
+    if ((typeof value !== "string" || !value.trim()) && typeof value !== "boolean") {
+      throw new Error(`Manifest field "${path}.requiresApproval" must be a non-empty string or boolean`);
+    }
+  }
 }
 
 export function parseManifestFile(file: string): Capability[] {
@@ -52,6 +79,7 @@ export function parseManifest(data: Record<string, unknown>): Capability[] {
       throw new Error(`Manifest field "${sourceKey}[${index}]" must be an object`);
     }
     const record = item as Record<string, unknown>;
+    validateFields(record, `${sourceKey}[${index}]`);
     const action = getString(record, ["action", "verb", "operation", "name"], "use");
     const target = getString(record, ["target", "resource", "scope", "description"], "unspecified");
     const category = getString(record, ["category", "type"], "");
