@@ -14,6 +14,10 @@ Each item can include:
 - `target`, `resource`, `scope`, or `description`
 - `approval`, `approvalRequirement`, or `requiresApproval`
 
+Every present identity, category, action, and target field must be a string.
+Invalid values are rejected instead of being replaced by a generated ID,
+inferred category, default action or target, or unspecified approval.
+
 Approval fields accept non-empty strings. The `requiresApproval` alias also
 accepts a boolean: `true` is normalized to `approval: "required"`, while
 `false` is normalized to `approval: "not required"`. This preserves an explicit
@@ -29,7 +33,9 @@ for display but are not interpreted directionally.
 Unknown fields are retained in the raw parsed capability for downstream review.
 Each array item must be a JSON object. A missing supported key, a non-array
 collection, or a non-object item is a validation error; the CLI prints the
-invalid key or indexed path and exits with status 1.
+invalid key or indexed path and exits with status 1. Field validation errors
+identify the exact collection index and field, such as `tools[1].action`, and
+the CLI does not emit a diff.
 
 Evidence paths retain the source collection name, such as `permissions[0]` or
 `tools[2]`. Changed entries in Markdown show both the before and after values
