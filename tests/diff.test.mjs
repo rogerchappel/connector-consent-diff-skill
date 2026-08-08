@@ -10,6 +10,24 @@ test("flags high risk added actions", () => {
   assert.equal(report.summary.highRisk, 2);
 });
 
+test("matches high-risk action words as complete tokens", () => {
+  const falsePositiveResources = ["sender profiles", "runtime settings", "installation guides", "published articles"];
+  for (const target of falsePositiveResources) {
+    const report = diffCapabilities([], parseManifest({
+      capabilities: [{ id: `read-${target}`, category: "network", action: "read", target, approval: "required" }]
+    }));
+    assert.equal(report.entries[0].risk, "low", target);
+  }
+
+  const highRiskActions = ["write", "send", "delete", "update", "create", "publish", "execute", "run", "install", "uninstall"];
+  for (const action of highRiskActions) {
+    const report = diffCapabilities([], parseManifest({
+      capabilities: [{ id: action, category: "network", action, target: "records", approval: "required" }]
+    }));
+    assert.equal(report.entries[0].risk, "high", action);
+  }
+});
+
 test("renders reviewer questions", () => {
   const before = parseManifestFile("fixtures/basic-before.json");
   const after = parseManifestFile("fixtures/safe-after.json");
