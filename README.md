@@ -44,6 +44,7 @@ console.log(renderJson(report));
 - Parses JSON connector manifests and OpenClaw-style tool summaries.
 - Finds added, removed, and changed read/write/action capabilities.
 - Classifies risk across filesystem, network, messaging, browser, shell, database, secrets, and unknown categories.
+- Matches high-risk write and execution actions as complete, case-insensitive tokens, so resource names such as `sender profiles` do not trigger on the `send` substring.
 - Emits Markdown or JSON evidence with approval wording and reviewer questions.
 - Preserves repeated capability IDs and compares repeated entries in manifest order.
 - Treats relaxing an explicit approval gate as high risk while leaving gate tightening low risk. Boolean values and the case-insensitive strings `required`, `true`, `yes`, and `always` mean approval is required; `not required`, `false`, `no`, `never`, and `none` mean it is not required. Other approval wording is not interpreted directionally.
