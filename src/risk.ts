@@ -1,7 +1,7 @@
 import type { Capability, DiffEntry } from "./types.js";
 
 const highCategories = new Set(["shell", "secrets", "database"]);
-const writeWords = /write|send|delete|update|create|publish|execute|run|install|uninstall/i;
+const writeWords = new Set(["write", "send", "delete", "update", "create", "publish", "execute", "run", "install", "uninstall"]);
 const approvalRequired = new Set(["required", "true", "yes", "always"]);
 const approvalNotRequired = new Set(["not required", "false", "no", "never", "none"]);
 
@@ -10,6 +10,10 @@ function approvalState(value: string): "required" | "not required" | "unknown" {
   if (approvalRequired.has(normalized)) return "required";
   if (approvalNotRequired.has(normalized)) return "not required";
   return "unknown";
+}
+
+function hasWriteAction(value: string): boolean {
+  return value.toLowerCase().split(/[^a-z0-9]+/).some((token) => writeWords.has(token));
 }
 
 export function classify(kind: DiffEntry["kind"], before: Capability | undefined, after: Capability | undefined): Pick<DiffEntry, "risk" | "reason" | "reviewerQuestion"> {
@@ -27,7 +31,7 @@ export function classify(kind: DiffEntry["kind"], before: Capability | undefined
       reviewerQuestion: "Why can this capability proceed without the previous approval gate?"
     };
   }
-  if (highCategories.has(capability.category) || writeWords.test(`${capability.action} ${capability.target}`)) {
+  if (highCategories.has(capability.category) || hasWriteAction(`${capability.action} ${capability.target}`)) {
     return {
       risk: "high",
       reason: `Adds or changes ${capability.category} capability with possible write or execution impact.`,
