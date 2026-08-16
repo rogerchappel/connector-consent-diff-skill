@@ -64,12 +64,18 @@ export function parseManifestFile(file: string): Capability[] {
 }
 
 export function parseManifest(data: Record<string, unknown>): Capability[] {
-  const sourceKey = ["capabilities", "permissions", "tools"].find((key) =>
+  const sourceKeys = ["capabilities", "permissions", "tools"].filter((key) =>
     Object.prototype.hasOwnProperty.call(data, key)
   );
-  if (!sourceKey) {
+  if (sourceKeys.length === 0) {
     throw new Error("Manifest must contain a capabilities, permissions, or tools array");
   }
+  if (sourceKeys.length > 1) {
+    throw new Error(
+      `Manifest must contain exactly one of capabilities, permissions, or tools; found conflicting keys: ${sourceKeys.join(", ")}`
+    );
+  }
+  const [sourceKey] = sourceKeys;
   const source = data[sourceKey];
   if (!Array.isArray(source)) {
     throw new Error(`Manifest field "${sourceKey}" must be an array`);

@@ -185,6 +185,21 @@ test("requires a supported array collection with object items", () => {
   assert.throws(() => parseManifest({ tools: ["send"] }), /"tools\[0\]" must be an object/);
 });
 
+test("requires exactly one supported collection", () => {
+  assert.throws(
+    () => parseManifest({ capabilities: [], tools: [] }),
+    /must contain exactly one of capabilities, permissions, or tools; found conflicting keys: capabilities, tools/
+  );
+  assert.throws(
+    () => parseManifest({ capabilities: [], permissions: [], tools: [] }),
+    /found conflicting keys: capabilities, permissions, tools/
+  );
+
+  assert.deepEqual(parseManifest({ capabilities: [] }), []);
+  assert.deepEqual(parseManifest({ permissions: [] }), []);
+  assert.deepEqual(parseManifest({ tools: [] }), []);
+});
+
 test("preserves permissions and tools evidence paths", () => {
   assert.equal(parseManifest({ permissions: [{ id: "read" }] })[0].evidencePath, "permissions[0]");
   assert.equal(parseManifest({ tools: [{ id: "send" }] })[0].evidencePath, "tools[0]");

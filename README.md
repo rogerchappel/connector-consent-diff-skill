@@ -53,9 +53,11 @@ console.log(renderJson(report));
 
 The CLI only reads local fixture files and writes to stdout unless `--output` is supplied. It never calls connector APIs, reads credential values, changes permissions, or approves external actions.
 
-Input must contain a `capabilities`, `permissions`, or `tools` array of objects.
-Invalid collection keys and shapes are reported as validation errors with exit
-status 1; see [the input format guide](docs/INPUT_FORMAT.md).
+Input must contain exactly one `capabilities`, `permissions`, or `tools` array
+of objects. These keys are mutually exclusive; manifests containing multiple
+supported collections are rejected with a diagnostic naming the conflicts.
+Invalid collection keys and shapes are also reported as validation errors with
+exit status 1 and no diff output; see [the input format guide](docs/INPUT_FORMAT.md).
 Reports containing any high-risk change are still emitted and exit with status
 2; reports without high-risk changes exit with status 0.
 

@@ -1,10 +1,14 @@
 # Input Format
 
-The CLI accepts a JSON object with one of these top-level arrays:
+The CLI accepts a JSON object with exactly one of these top-level arrays:
 
 - `capabilities`
 - `permissions`
 - `tools`
+
+These collection keys are mutually exclusive. A manifest containing two or
+more of them is rejected, even when the extra collections are empty. The error
+names every conflicting key so the producer can select the intended format.
 
 Each item can include:
 
@@ -31,9 +35,10 @@ the opposite direction remains low risk. Other non-empty strings are preserved
 for display but are not interpreted directionally.
 
 Unknown fields are retained in the raw parsed capability for downstream review.
-Each array item must be a JSON object. A missing supported key, a non-array
-collection, or a non-object item is a validation error; the CLI prints the
-invalid key or indexed path and exits with status 1. Field validation errors
+Each array item must be a JSON object. A missing supported key, multiple
+supported keys, a non-array collection, or a non-object item is a validation
+error; the CLI prints the conflicting keys, invalid key, or indexed path and
+exits with status 1 without emitting a diff. Field validation errors
 identify the exact collection index and field, such as `tools[1].action`, and
 the CLI does not emit a diff.
 

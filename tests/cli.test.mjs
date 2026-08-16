@@ -64,6 +64,26 @@ test("reports validation errors for invalid collection and item shapes", () => {
   }
 });
 
+test("rejects conflicting collections in either input without emitting a diff", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
+  const conflictingBefore = path.join(directory, "before.json");
+  const conflictingAfter = path.join(directory, "after.json");
+  try {
+    fs.writeFileSync(conflictingBefore, JSON.stringify({ capabilities: [], tools: [] }));
+    fs.writeFileSync(conflictingAfter, JSON.stringify({ permissions: [], tools: [] }));
+
+    for (const result of [run([conflictingBefore, after]), run([before, conflictingAfter])]) {
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /exactly one of capabilities, permissions, or tools/);
+      assert.match(result.stderr, /conflicting keys: (capabilities, tools|permissions, tools)/);
+      assert.equal(result.stdout, "");
+      assert.doesNotMatch(result.stdout, /Connector Consent Diff|No permission changes detected/);
+    }
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("rejects invalid field types without emitting a misleading diff", () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
   const invalid = path.join(directory, "invalid.json");
