@@ -223,18 +223,20 @@ test("retains string approval fields and requiresApproval strings", () => {
   assert.equal(parseManifest({ tools: [{ requiresApproval: "per use" }] })[0].approval, "per use");
 });
 
-test("rejects present non-string capability fields with their exact paths", () => {
+test("rejects invalid capability aliases with their exact paths", () => {
   const fields = [
     "id", "name", "category", "type", "action", "verb", "operation",
     "target", "resource", "scope", "description"
   ];
 
   for (const field of fields) {
-    assert.throws(
-      () => parseManifest({ tools: [{ id: "valid" }, { [field]: 17 }] }),
-      new RegExp(`Manifest field "tools\\[1\\]\\.${field}" must be a string`),
-      field
-    );
+    for (const value of [17, "", "  \t "]) {
+      assert.throws(
+        () => parseManifest({ tools: [{ id: "valid" }, { [field]: value }] }),
+        new RegExp(`Manifest field "tools\\[1\\]\\.${field}" must be a non-empty string`),
+        `${field}: ${JSON.stringify(value)}`
+      );
+    }
   }
 });
 
