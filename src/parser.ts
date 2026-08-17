@@ -34,8 +34,11 @@ function getApproval(record: Record<string, unknown>): string {
 
 function validateFields(record: Record<string, unknown>, path: string): void {
   for (const field of stringFields) {
-    if (Object.prototype.hasOwnProperty.call(record, field) && typeof record[field] !== "string") {
-      throw new Error(`Manifest field "${path}.${field}" must be a string`);
+    if (Object.prototype.hasOwnProperty.call(record, field)) {
+      const value = record[field];
+      if (typeof value !== "string" || !value.trim()) {
+        throw new Error(`Manifest field "${path}.${field}" must be a non-empty string`);
+      }
     }
   }
   for (const field of approvalFields) {

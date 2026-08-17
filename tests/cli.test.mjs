@@ -84,7 +84,7 @@ test("rejects conflicting collections in either input without emitting a diff", 
   }
 });
 
-test("rejects invalid field types without emitting a misleading diff", () => {
+test("rejects invalid field values without emitting a misleading diff", () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
   const invalid = path.join(directory, "invalid.json");
   try {
@@ -94,9 +94,38 @@ test("rejects invalid field types without emitting a misleading diff", () => {
     ] }));
     const result = run([invalid, after]);
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /Manifest field "tools\[1\]\.id" must be a string/);
+    assert.match(result.stderr, /Manifest field "tools\[1\]\.id" must be a non-empty string/);
     assert.equal(result.stdout, "");
     assert.doesNotMatch(result.stdout, /Connector Consent Diff|No permission changes detected/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects blank identity, category, action, and target aliases without emitting a diff", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "connector-consent-diff-"));
+  const aliases = [
+    "id", "name", "category", "type", "action", "verb", "operation",
+    "target", "resource", "scope", "description"
+  ];
+  try {
+    for (const [index, field] of aliases.entries()) {
+      const invalid = path.join(directory, `${field}.json`);
+      fs.writeFileSync(invalid, JSON.stringify({ permissions: [
+        { id: "valid" },
+        { id: "also-valid", [field]: index % 2 === 0 ? "" : " \t " }
+      ] }));
+
+      const result = run([invalid, after, "--format", "json"]);
+      assert.equal(result.status, 1, field);
+      assert.match(
+        result.stderr,
+        new RegExp(`Manifest field "permissions\\[1\\]\\.${field}" must be a non-empty string`),
+        field
+      );
+      assert.equal(result.stdout, "", field);
+      assert.doesNotMatch(result.stdout, /Connector Consent Diff|No permission changes detected/, field);
+    }
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }

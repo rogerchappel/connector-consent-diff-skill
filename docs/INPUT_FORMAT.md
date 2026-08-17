@@ -18,8 +18,9 @@ Each item can include:
 - `target`, `resource`, `scope`, or `description`
 - `approval`, `approvalRequirement`, or `requiresApproval`
 
-Every present identity, category, action, and target field must be a string.
-Invalid values are rejected instead of being replaced by a generated ID,
+Every present identity, category, action, and target field must be a non-empty
+string after trimming whitespace. Blank, whitespace-only, and non-string values
+are rejected instead of being replaced by a generated ID,
 inferred category, default action or target, or unspecified approval.
 
 Approval fields accept non-empty strings. The `requiresApproval` alias also

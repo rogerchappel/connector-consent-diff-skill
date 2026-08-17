@@ -56,8 +56,11 @@ The CLI only reads local fixture files and writes to stdout unless `--output` is
 Input must contain exactly one `capabilities`, `permissions`, or `tools` array
 of objects. These keys are mutually exclusive; manifests containing multiple
 supported collections are rejected with a diagnostic naming the conflicts.
-Invalid collection keys and shapes are also reported as validation errors with
-exit status 1 and no diff output; see [the input format guide](docs/INPUT_FORMAT.md).
+Invalid collection keys and shapes are also reported as validation errors.
+Present identity, category, action, and target aliases must be non-empty strings;
+blank, whitespace-only, and non-string values are rejected rather than replaced
+by defaults. Validation errors exit with status 1 and no diff output; see
+[the input format guide](docs/INPUT_FORMAT.md).
 Reports containing any high-risk change are still emitted and exit with status
 2; reports without high-risk changes exit with status 0.
 
