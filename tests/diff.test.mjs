@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { diffCapabilities, parseManifest, parseManifestFile, renderJson, renderMarkdown } from "../dist/index.js";
 
@@ -8,6 +12,54 @@ test("flags high risk added actions", () => {
   const report = diffCapabilities(before, after);
   assert.equal(report.summary.added, 2);
   assert.equal(report.summary.highRisk, 2);
+});
+
+test("normalizes only complete explicit category values", () => {
+  const capabilities = parseManifest({
+    capabilities: [
+      { id: "shellfish", category: "shellfish", action: "read", target: "records", approval: "required" },
+      { id: "database-proxy", type: "databaseProxy", action: "read", target: "records", approval: "required" },
+      { id: "networking", category: "networking", action: "read", target: "records", approval: "required" },
+      { id: "shell", category: "SHELL", action: "read", target: "records", approval: "required" },
+      { id: "filesystem", type: "file-system", action: "read", target: "records", approval: "required" }
+    ]
+  });
+
+  assert.deepEqual(capabilities.map(({ category }) => category), ["unknown", "unknown", "unknown", "shell", "filesystem"]);
+  const report = diffCapabilities([], capabilities);
+  assert.equal(report.summary.highRisk, 1);
+  assert.deepEqual(report.entries.map(({ risk }) => risk), ["medium", "medium", "medium", "high", "low"]);
+});
+
+test("infers categories from complete delimiter-separated tokens", () => {
+  const capabilities = parseManifest({
+    capabilities: [
+      { id: "shellfish", action: "inspect", target: "shellfish", approval: "required" },
+      { id: "database-proxy", action: "inspect", target: "databaseProxy", approval: "required" },
+      { id: "networking", action: "inspect", target: "networking", approval: "required" },
+      { id: "shell", action: "run", target: "shell-command", approval: "required" },
+      { id: "filesystem", action: "read", target: "file_system", approval: "required" }
+    ]
+  });
+
+  assert.deepEqual(capabilities.map(({ category }) => category), ["unknown", "unknown", "unknown", "shell", "filesystem"]);
+});
+
+test("CLI preserves false-positive categories as unknown", () => {
+  const directory = mkdtempSync(join(tmpdir(), "connector-consent-diff-"));
+  const before = join(directory, "before.json");
+  const after = join(directory, "after.json");
+  writeFileSync(before, JSON.stringify({ capabilities: [] }));
+  writeFileSync(after, JSON.stringify({ capabilities: [
+    { id: "probe", category: "shellfish", action: "read", target: "records", approval: "required" }
+  ] }));
+
+  const result = spawnSync(process.execPath, ["dist/cli.js", before, after, "--format", "json"], { encoding: "utf8" });
+  assert.equal(result.status, 0);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.summary.highRisk, 0);
+  assert.equal(report.entries[0].after.category, "unknown");
+  assert.equal(report.entries[0].risk, "medium");
 });
 
 test("matches high-risk action words as complete tokens", () => {

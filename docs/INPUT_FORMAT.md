@@ -36,6 +36,12 @@ the opposite direction remains low risk. Other non-empty strings are preserved
 for display but are not interpreted directionally.
 
 Unknown fields are retained in the raw parsed capability for downstream review.
+
+## Category normalization
+
+An explicit `category` or `type` is normalized only when its complete value matches a supported category, ignoring case. The supported values are `filesystem`, `network`, `messaging`, `browser`, `shell`, `database`, and `secrets`; `file-system`, `file_system`, and `file system` are accepted compound spellings of `filesystem`. Other values become `unknown`, so words such as `shellfish`, `databaseProxy`, and `networking` are not silently reclassified.
+
+When no category is supplied, the parser infers one from `action` and `target` using complete lowercase alphanumeric tokens separated by punctuation or whitespace. For example, `run shell-command` infers `shell` and `read file-system` infers `filesystem`, while `inspect shellfish` remains `unknown`.
 Each array item must be a JSON object. A missing supported key, multiple
 supported keys, a non-array collection, or a non-object item is a validation
 error; the CLI prints the conflicting keys, invalid key, or indexed path and

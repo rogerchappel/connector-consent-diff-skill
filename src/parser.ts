@@ -8,9 +8,22 @@ const stringFields = [
 ];
 const approvalFields = ["approval", "approvalRequirement"];
 
-function categoryFor(value: string): CapabilityCategory {
-  const text = value.toLowerCase();
-  return categories.find((category) => text.includes(category)) ?? "unknown";
+function normalizeExplicitCategory(value: string): CapabilityCategory {
+  const normalized = value.trim().toLowerCase();
+  if (categories.includes(normalized as CapabilityCategory)) return normalized as CapabilityCategory;
+  if (/^file[-_\s]system$/.test(normalized)) return "filesystem";
+  return "unknown";
+}
+
+function inferCategory(value: string): CapabilityCategory {
+  const tokens = value.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  for (const category of categories) {
+    if (tokens.includes(category)) return category;
+  }
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    if (tokens[index] === "file" && tokens[index + 1] === "system") return "filesystem";
+  }
+  return "unknown";
 }
 
 function getString(record: Record<string, unknown>, names: string[], fallback = ""): string {
@@ -92,10 +105,11 @@ export function parseManifest(data: Record<string, unknown>): Capability[] {
     const action = getString(record, ["action", "verb", "operation", "name"], "use");
     const target = getString(record, ["target", "resource", "scope", "description"], "unspecified");
     const category = getString(record, ["category", "type"], "");
-    const id = getString(record, ["id", "name"], `${category || categoryFor(action + " " + target)}:${action}:${target}`);
+    const normalizedCategory = category ? normalizeExplicitCategory(category) : inferCategory(action + " " + target);
+    const id = getString(record, ["id", "name"], `${category || normalizedCategory}:${action}:${target}`);
     return {
       id,
-      category: (category ? categoryFor(category) : categoryFor(action + " " + target)),
+      category: normalizedCategory,
       action,
       target,
       approval: getApproval(record),
