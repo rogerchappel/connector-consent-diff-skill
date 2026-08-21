@@ -43,7 +43,7 @@ console.log(renderJson(report));
 
 - Parses JSON connector manifests and OpenClaw-style tool summaries.
 - Finds added, removed, and changed read/write/action capabilities.
-- Classifies risk across filesystem, network, messaging, browser, shell, database, secrets, and unknown categories.
+- Classifies risk across filesystem, network, messaging, browser, shell, database, secrets, and unknown categories. Explicit categories must be an exact supported value (case-insensitive; `file-system`, `file_system`, and `file system` also normalize to `filesystem`). When the category is omitted, inference matches only complete delimiter-separated category tokens, never substrings inside unrelated words.
 - Matches high-risk write and execution actions as complete, case-insensitive tokens, so resource names such as `sender profiles` do not trigger on the `send` substring.
 - Emits Markdown or JSON evidence with approval wording and reviewer questions.
 - Preserves repeated capability IDs and compares repeated entries in manifest order.
@@ -66,7 +66,7 @@ Reports containing any high-risk change are still emitted and exit with status
 
 ## Limitations
 
-V1 uses deterministic keyword classification. Treat unknown categories as review prompts, not authoritative security findings.
+V1 uses deterministic complete-token classification. Treat unknown categories as review prompts, not authoritative security findings.
 
 ## Verification
 
