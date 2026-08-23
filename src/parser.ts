@@ -7,6 +7,7 @@ const stringFields = [
   "target", "resource", "scope", "description"
 ];
 const approvalFields = ["approval", "approvalRequirement"];
+const allApprovalFields = [...approvalFields, "requiresApproval"];
 
 function normalizeExplicitCategory(value: string): CapabilityCategory {
   const normalized = value.trim().toLowerCase();
@@ -45,6 +46,25 @@ function getApproval(record: Record<string, unknown>): string {
   return "unspecified";
 }
 
+function normalizedApprovalMeaning(value: string | boolean): string {
+  if (typeof value === "boolean") return value ? "required" : "not required";
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, " ");
+  if (["required", "true", "yes", "always"].includes(normalized)) return "required";
+  if (["not required", "false", "no", "never", "none"].includes(normalized)) return "not required";
+  return normalized;
+}
+
+function validateApprovalConsistency(record: Record<string, unknown>, path: string): void {
+  const present = allApprovalFields.filter((field) => Object.prototype.hasOwnProperty.call(record, field));
+  if (present.length < 2) return;
+  const expected = normalizedApprovalMeaning(record[present[0]] as string | boolean);
+  for (const field of present.slice(1)) {
+    if (normalizedApprovalMeaning(record[field] as string | boolean) !== expected) {
+      throw new Error(`Manifest field "${path}.${field}" conflicts with approval alias "${path}.${present[0]}"`);
+    }
+  }
+}
+
 function validateFields(record: Record<string, unknown>, path: string): void {
   for (const field of stringFields) {
     if (Object.prototype.hasOwnProperty.call(record, field)) {
@@ -68,6 +88,7 @@ function validateFields(record: Record<string, unknown>, path: string): void {
       throw new Error(`Manifest field "${path}.requiresApproval" must be a non-empty string or boolean`);
     }
   }
+  validateApprovalConsistency(record, path);
 }
 
 export function parseManifestFile(file: string): Capability[] {
