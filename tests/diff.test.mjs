@@ -275,6 +275,38 @@ test("retains string approval fields and requiresApproval strings", () => {
   assert.equal(parseManifest({ tools: [{ requiresApproval: "per use" }] })[0].approval, "per use");
 });
 
+test("accepts redundant approval aliases with equivalent normalized meanings", () => {
+  const required = parseManifest({ capabilities: [{ approval: " required ", approvalRequirement: "YES", requiresApproval: true }] })[0];
+  const notRequired = parseManifest({ tools: [{ approval: "not required", approvalRequirement: "never", requiresApproval: false }] })[0];
+  assert.equal(required.approval, "required");
+  assert.equal(notRequired.approval, "not required");
+});
+
+test("rejects conflicting approval aliases with the exact conflicting path", () => {
+  assert.throws(
+    () => parseManifest({ capabilities: [{ approval: "required", requiresApproval: false }] }),
+    /Manifest field "capabilities\[0\]\.requiresApproval" conflicts with approval alias "capabilities\[0\]\.approval"/
+  );
+  assert.throws(
+    () => parseManifest({ permissions: [{ approval: "required", approvalRequirement: "none" }] }),
+    { message: 'Manifest field "permissions[0].approvalRequirement" conflicts with approval alias "permissions[0].approval"' }
+  );
+});
+
+test("CLI rejects conflicting approval aliases without rendering a diff", () => {
+  const directory = mkdtempSync(join(tmpdir(), "connector-consent-diff-"));
+  const before = join(directory, "before.json");
+  const after = join(directory, "after.json");
+  const capability = { id: "read", category: "filesystem", action: "read", target: "config" };
+  writeFileSync(before, JSON.stringify({ capabilities: [{ ...capability, approval: "required", requiresApproval: true }] }));
+  writeFileSync(after, JSON.stringify({ capabilities: [{ ...capability, approval: "required", requiresApproval: false }] }));
+  const result = spawnSync(process.execPath, ["dist/cli.js", before, after, "--format", "json"], { encoding: "utf8" });
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /capabilities\[0\]\.requiresApproval/);
+  assert.doesNotMatch(result.stderr, /"summary"|Connector Consent Diff/);
+});
+
 test("rejects invalid capability aliases with their exact paths", () => {
   const fields = [
     "id", "name", "category", "type", "action", "verb", "operation",
