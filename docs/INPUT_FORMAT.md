@@ -35,6 +35,11 @@ approval. Changing from the first group to the second is high risk; changing in
 the opposite direction remains low risk. Other non-empty strings are preserved
 for display but are not interpreted directionally.
 
+When an item contains multiple approval aliases, all must have the same
+normalized meaning. Redundant equivalents such as `approval: "required"` and
+`requiresApproval: true` are accepted. Conflicts such as `approval: "required"`
+and `requiresApproval: false` are rejected with the conflicting field path.
+
 Unknown fields are retained in the raw parsed capability for downstream review.
 
 ## Category normalization
