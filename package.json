@@ -37,8 +37,8 @@
   "author": "Roger Chappel",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^26.1.1",
-    "typescript": "^5.5.4"
+    "@types/node": "^26.3.0",
+    "typescript": "^7.0.2"
   },
   "repository": {
     "type": "git",
